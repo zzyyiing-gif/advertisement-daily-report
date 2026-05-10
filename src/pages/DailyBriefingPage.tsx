@@ -8,10 +8,7 @@ import {
   ArrowRight, Sparkles, AlertTriangle, ListChecks, Trash2,
   Clock, MapPin, User, Tag, Search, Plus
 } from 'lucide-react';
-import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, AreaChart, Area 
-} from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { calculateDailySummary, AdFilters } from '../services/adAnalysisService';
 import { parseCsv, normalizeData } from '../utils/csvParser';
 import { 
@@ -98,31 +95,31 @@ const MetricCard: React.FC<MetricCardProps> = ({ metric, isActive, onClick }) =>
 };
 
 const TrendChart: React.FC<{ metric: AdMetric }> = ({ metric }) => {
-  if (!metric.trendData || metric.trendData.length === 0) return null;
-
+  const isPositive = metric.trend === 'up';
+  
   return (
-    <div className="bg-white rounded-2xl border border-indigo-100 p-6 shadow-xl shadow-indigo-100/50">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white rounded-[32px] border border-slate-200 p-8 shadow-sm">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h4 className="text-lg font-black text-slate-900 flex items-center gap-2">
-            {metric.label} 近一周趋势
-            <span className="text-xs font-normal text-slate-400">基于 7 日滚动均值对比</span>
-          </h4>
+          <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
+            <TrendingUp size={20} className={isPositive ? 'text-green-500' : 'text-red-500'} />
+            {metric.label} 趋势洞察
+          </h3>
+          <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest">7-Day Performance Window</p>
         </div>
-        <div className="flex items-center gap-4">
-           <div className="flex items-center gap-1.5">
-             <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
-             <span className="text-xs font-bold text-slate-500">观测值</span>
-           </div>
+        <div className="flex gap-2">
+          <div className="px-3 py-1 bg-slate-50 rounded-lg text-[10px] font-black text-slate-400 border border-slate-100">MA(5)</div>
+          <div className="px-3 py-1 bg-indigo-50 rounded-lg text-[10px] font-black text-indigo-600 border border-indigo-100 uppercase tracking-tighter">Live Monitor</div>
         </div>
       </div>
-      <div className="h-[280px] w-full">
+      
+      <div className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={metric.trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.2}/>
-                <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                <stop offset="5%" stopColor={isPositive ? "#10b981" : "#6366f1"} stopOpacity={0.1}/>
+                <stop offset="95%" stopColor={isPositive ? "#10b981" : "#6366f1"} stopOpacity={0}/>
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -130,31 +127,25 @@ const TrendChart: React.FC<{ metric: AdMetric }> = ({ metric }) => {
               dataKey="date" 
               axisLine={false} 
               tickLine={false} 
-              tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }}
+              tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 700 }}
               dy={10}
             />
             <YAxis 
-              axisLine={false} 
-              tickLine={false} 
-              tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }}
-              tickFormatter={(v) => metric.isCurrency ? `¥${v}` : metric.isPercentage ? `${(v * 100).toFixed(1)}%` : v}
+              hide={true}
+              domain={['auto', 'auto']}
             />
             <Tooltip 
-              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
-              labelStyle={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '12px' }}
-              formatter={(v: number) => [
-                metric.isCurrency ? `¥${v.toLocaleString()}` : metric.isPercentage ? (v * 100).toFixed(2) + '%' : v.toLocaleString(), 
-                metric.label
-              ]}
+              contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 900 }}
+              cursor={{ stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '4 4' }}
             />
             <Area 
               type="monotone" 
               dataKey="value" 
-              stroke="#4f46e5" 
-              strokeWidth={3}
+              stroke={isPositive ? "#10b981" : "#6366f1"} 
+              strokeWidth={4}
               fillOpacity={1} 
               fill="url(#colorValue)" 
-              animationDuration={1500}
+              animationDuration={2000}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -257,42 +248,26 @@ interface ScheduleItem {
   meetingLink?: string;
 }
 
-const ScheduleTimeline = () => {
-  const [schedules, setSchedules] = useState<ScheduleItem[]>([
-    { id: '1', time: '09:30', title: '早间数据复盘会', type: 'meeting', person: '投放组', location: '会议室 A01', docLink: 'https://docs.example.com/briefing', meetingLink: 'https://zoom.us/j/123456' },
-    { id: '2', time: '11:00', title: '消耗异动深度排查', type: 'action', person: '优化师', location: '工位' },
-    { id: '3', time: '14:00', title: '周度素材策略同步', type: 'meeting', person: '设计组', location: '会议厅 B', docLink: 'https://docs.example.com/assets' },
-  ]);
+interface ScheduleTimelineProps {
+  schedules: ScheduleItem[];
+  onUpdate: (id: string, updates: Partial<ScheduleItem>) => void;
+  onDelete: (id: string) => void;
+  onAdd: () => void;
+}
 
+const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ schedules, onUpdate, onDelete, onAdd }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000); // Update every minute
+    }, 60000);
     return () => clearInterval(timer);
   }, []);
 
-  const handleDelete = (id: string) => {
-    setSchedules(prev => prev.filter(s => s.id !== id));
-  };
-
   const handleUpdate = (id: string, updates: Partial<ScheduleItem>) => {
-    setSchedules(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
-  };
-
-  const handleAdd = () => {
-    const newItem: ScheduleItem = {
-      id: Math.random().toString(36).substr(2, 9),
-      time: '09:00',
-      title: '新工作项',
-      type: 'task',
-      person: '我',
-      location: '待定'
-    };
-    setSchedules(prev => [...prev, newItem]);
-    setEditingId(newItem.id);
+    onUpdate(id, updates);
   };
 
   const isPast = (timeStr: string) => {
@@ -312,7 +287,7 @@ const ScheduleTimeline = () => {
           <h3 className="text-xl font-black text-slate-900">今日工作安排</h3>
         </div>
         <button 
-          onClick={handleAdd}
+          onClick={onAdd}
           className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors"
         >
           <Plus size={18} />
@@ -387,12 +362,20 @@ const ScheduleTimeline = () => {
                         className="w-full bg-white border border-slate-200 rounded-lg p-2 text-[10px] font-bold outline-none"
                       />
                     </div>
-                    <button 
-                      onClick={() => setEditingId(null)}
-                      className="w-full py-2 bg-indigo-600 text-white rounded-lg text-xs font-black uppercase tracking-widest"
-                    >
-                      完成保存
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => setEditingId(null)}
+                        className="flex-1 py-2 bg-indigo-600 text-white rounded-lg text-xs font-black uppercase tracking-widest"
+                      >
+                        完成保存
+                      </button>
+                      <button 
+                        onClick={() => { onDelete(item.id); setEditingId(null); }}
+                        className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-xs font-black uppercase tracking-widest"
+                      >
+                        删除
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -402,7 +385,7 @@ const ScheduleTimeline = () => {
                           <button onClick={() => setEditingId(item.id)} className="p-1.5 text-slate-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-all">
                             <RefreshCw size={14} />
                           </button>
-                          <button onClick={() => handleDelete(item.id)} className="p-1.5 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                          <button onClick={() => onDelete(item.id)} className="p-1.5 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
                             <Trash2 size={14} />
                           </button>
                           <div className={`text-[10px] font-black px-2 py-0.5 rounded uppercase self-center
@@ -435,11 +418,11 @@ const ScheduleTimeline = () => {
               </div>
             </div>
           </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 // --- Main Page ---
@@ -459,6 +442,11 @@ export default function DailyBriefingPage() {
   const [newsLoading, setNewsLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [schedules, setSchedules] = useState<ScheduleItem[]>([
+    { id: '1', time: '09:30', title: '早间数据复盘会', type: 'meeting', person: '投放组', location: '会议室 A01', docLink: 'https://docs.example.com/briefing', meetingLink: 'https://zoom.us/j/123456' },
+    { id: '2', time: '11:00', title: '消耗异动深度排查', type: 'action', person: '优化师', location: '工位' },
+    { id: '3', time: '14:00', title: '周度素材策略同步', type: 'meeting', person: '设计组', location: '会议厅 B', docLink: 'https://docs.example.com/assets' },
+  ]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<{ name: string; size: number; status: 'idle' | 'success' | 'error' | 'parsing' }>({ name: '', size: 0, status: 'idle' });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -478,17 +466,10 @@ export default function DailyBriefingPage() {
   const fetchNews = async () => {
     setNewsLoading(true);
     try {
-      console.log('Fetching industry news from /api/news...');
       const res = await fetch('/api/news');
-      console.log('News Response status:', res.status);
       if (!res.ok) throw new Error(`API 响应错误: ${res.status}`);
       const data = await res.json();
-      console.log('News Data received:', data);
-      if (Array.isArray(data)) {
-        setNews(data);
-      } else {
-        console.error('资讯数据格式不正确', data);
-      }
+      if (Array.isArray(data)) setNews(data);
     } catch (e) { 
       console.error('Fetch news error', e);
     } finally {
@@ -499,22 +480,35 @@ export default function DailyBriefingPage() {
   const fetchAiUpdates = async () => {
     setAiLoading(true);
     try {
-      console.log('Fetching AI updates from /api/ai-updates...');
       const res = await fetch('/api/ai-updates');
-      console.log('AI Updates Response status:', res.status);
       if (!res.ok) throw new Error(`API 响应错误: ${res.status}`);
       const data = await res.json();
-      console.log('AI Data received:', data);
-      if (Array.isArray(data)) {
-        setAiUpdates(data);
-      } else {
-        console.error('AI 动态数据格式不正确', data);
-      }
+      if (Array.isArray(data)) setAiUpdates(data);
     } catch (e) { 
       console.error('Fetch AI error', e);
     } finally {
       setAiLoading(false);
     }
+  };
+
+  const handleUpdateSchedule = (id: string, updates: Partial<ScheduleItem>) => {
+    setSchedules(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+  };
+
+  const handleDeleteSchedule = (id: string) => {
+    setSchedules(prev => prev.filter(s => s.id !== id));
+  };
+
+  const handleAddSchedule = () => {
+    const newItem: ScheduleItem = {
+      id: Math.random().toString(36).substring(2, 9),
+      time: '09:00',
+      title: '新工作项',
+      type: 'task',
+      person: '我',
+      location: '待定'
+    };
+    setSchedules(prev => [...prev, newItem]);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -527,17 +521,12 @@ export default function DailyBriefingPage() {
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      setErrorMessage('文件过大，请上传 10MB 以内的 CSV 文件。');
-      return;
-    }
-
     setUploadStatus({ name: file.name, size: file.size, status: 'parsing' });
     setLoading(true);
 
     const reader = new FileReader();
     reader.onerror = () => {
-      setErrorMessage('文件读取出错，请尝试重新上传。');
+      setErrorMessage('文件读取出错');
       setUploadStatus(prev => ({ ...prev, status: 'error' }));
       setLoading(false);
     };
@@ -548,29 +537,23 @@ export default function DailyBriefingPage() {
         if (!text) throw new Error('文件内容为空');
         
         const raw = parseCsv(text);
-        if (raw.length === 0) throw new Error('CSV 解析结果为空，请确认文件是否有内容。');
+        if (raw.length === 0) throw new Error('CSV 解析结果为空');
         
         const normalized = normalizeData(raw);
-        
-        if (normalized.length === 0) {
-          throw new Error('未识别到有效的广告数据行。请确认包含 “日期” 和 “消耗” 等字段。');
-        }
+        if (normalized.length === 0) throw new Error('未识别到有效的广告数据行');
 
         const dates = Array.from(new Set(normalized.map(d => d.date))).sort((a,b) => b.localeCompare(a));
         setCsvData(normalized);
         setAvailableDates(dates);
+        setTargetDate(dates[0]);
         
-        const latest = dates[0];
-        setTargetDate(latest);
-        
-        // Extract dimension suggestions for searchable inputs
         setDimensionSuggestions({
           ads: Array.from(new Set(normalized.map(d => d.ad).filter(Boolean))) as string[],
           slots: Array.from(new Set(normalized.map(d => d.adSlot).filter(Boolean))) as string[],
           advertisers: Array.from(new Set(normalized.map(d => d.advertiser).filter(Boolean))) as string[]
         });
 
-        const summary = calculateDailySummary(normalized, latest, filters);
+        const summary = calculateDailySummary(normalized, dates[0], filters);
         setBriefing(summary);
         setUploadStatus(prev => ({ ...prev, status: 'success' }));
       } catch (err: any) {
@@ -583,15 +566,13 @@ export default function DailyBriefingPage() {
     reader.readAsText(file);
   };
 
-  const clearData = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+  const clearData = () => {
     setCsvData([]);
     setBriefing(null);
     setTargetDate('');
     setAvailableDates([]);
     setErrorMessage(null);
     setFilters({ adName: '', adSlot: '', advertiser: '' });
-    setSelectedMetricLabel('消耗');
     setUploadStatus({ name: '', size: 0, status: 'idle' });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -634,19 +615,14 @@ export default function DailyBriefingPage() {
           <div>
             <div className="flex items-center gap-2 text-indigo-600 font-black tracking-widest mb-2">
               <Sparkles size={18} />
-              <span>ADS MASTER • BETA</span>
+              <span>ADS MASTER • BUREAU</span>
             </div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-              每日早报汇总
-              {briefing && (
-                <span className="text-sm font-bold text-red-500 bg-red-50 border border-red-100 px-3 py-1 rounded-full animate-pulse">
-                  {briefing.anomalies.length} 个剧烈异动
-                </span>
-              )}
+              广告投放每日智能简报
             </h1>
             <p className="mt-2 text-slate-500 font-bold flex items-center gap-4">
               <span className="flex items-center gap-1.5"><Calendar size={16} /> {targetDate || today}</span>
-              <span className="flex items-center gap-1.5 underline decoration-indigo-200 underline-offset-4">数据驱动决策</span>
+              <span className="flex items-center gap-1.5 underline decoration-indigo-200 underline-offset-4">聚焦核心任务</span>
             </p>
           </div>
 
@@ -655,64 +631,41 @@ export default function DailyBriefingPage() {
               <div className="bg-indigo-600 text-white rounded-2xl py-3 px-6 shadow-lg shadow-indigo-100 flex items-center gap-4 border border-indigo-500">
                 <div className="bg-white/20 p-1.5 rounded-lg"><CheckCircle2 size={16} /></div>
                 <div className="text-left">
-                  <div className="text-xs font-black uppercase tracking-widest text-indigo-200">数据源</div>
+                  <div className="text-xs font-black uppercase tracking-widest text-indigo-200">数据源已挂载</div>
                   <div className="text-sm font-bold truncate max-w-[150px]">{uploadStatus.name}</div>
                 </div>
-                <button 
-                  onClick={clearData}
-                  className="bg-white/10 hover:bg-red-500 p-2 rounded-lg transition-all"
-                >
+                <button onClick={clearData} className="bg-white/10 hover:bg-red-500 p-2 rounded-lg transition-all">
                   <Trash2 size={14} />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-slate-400 font-bold bg-white px-4 py-2 rounded-xl border border-slate-100 shadow-sm transition-all hover:bg-slate-50">
-                <Info size={16} />
-                请上传投放 CSV
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 text-slate-600 font-bold bg-white px-6 py-3 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:bg-slate-50 transition-all"
+              >
+                <Plus size={16} className="text-indigo-600" />
+                上传 CSV 辅助分析
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".csv" />
               </div>
             )}
           </div>
         </header>
 
-        {/* Action Bar / Upload Area */}
+        {/* Global Overview Section */}
         <div className="mb-12 grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-12 xl:col-span-8">
-             {uploadStatus.status === 'idle' ? (
-               <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-white border-4 border-dashed border-slate-100 rounded-[32px] p-12 transition-all cursor-pointer flex flex-col items-center justify-center text-center gap-6 hover:border-indigo-200 hover:bg-slate-50/50 group h-full"
-              >
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileUpload} 
-                  className="hidden" 
-                  accept=".csv"
-                />
-                <div className="bg-indigo-50 p-6 rounded-3xl text-indigo-600 group-hover:scale-110 transition-transform">
-                  <Upload size={48} />
-                </div>
-                <div>
-                  <div className="text-2xl font-black text-slate-800 tracking-tight">上传昨日广告数据 CSV</div>
-                  <p className="text-slate-500 mt-2 font-medium">支持消耗、展示、点击、请求、ad_name、广告位等字段</p>
-                </div>
-                <div className="flex items-center gap-4 text-xs font-black uppercase text-indigo-600">
-                  <span className="bg-indigo-50 px-3 py-1.5 rounded-lg">UTF-8 编码</span>
-                  <span className="bg-indigo-50 px-3 py-1.5 rounded-lg">&lt; 10MB</span>
-                </div>
-              </div>
-             ) : (
-               <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm h-full flex flex-col">
-                  <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-xl font-black text-slate-900 flex items-center gap-2 uppercase tracking-tight">
-                      <Search size={22} className="text-indigo-600" />
-                      深度维度筛选
-                    </h3>
-                    <div className="flex gap-2">
-                       <button onClick={clearData} className="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-200 transition-colors uppercase">重置所有</button>
-                    </div>
+             <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm h-full">
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-xl font-black text-slate-900 flex items-center gap-2 uppercase tracking-tight">
+                    <Search size={22} className="text-indigo-600" />
+                    投放数据上下文
+                  </h3>
+                  <div className="flex gap-2">
+                    <button onClick={clearData} className="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-black rounded-xl hover:bg-slate-200 transition-colors uppercase">重置</button>
                   </div>
-                  
+                </div>
+                
+                {csvData.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div className="space-y-2">
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">分析日期</label>
@@ -720,7 +673,7 @@ export default function DailyBriefingPage() {
                         <select 
                           value={targetDate} 
                           onChange={(e) => setTargetDate(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:ring-4 focus:ring-indigo-100 outline-none appearance-none cursor-pointer"
+                          className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:ring-4 focus:ring-indigo-100 outline-none appearance-none cursor-pointer shadow-inner"
                         >
                           {availableDates.map(d => <option key={d} value={d}>{d}</option>)}
                         </select>
@@ -733,19 +686,19 @@ export default function DailyBriefingPage() {
                           <input 
                             list="ads-list"
                             type="text" 
-                            placeholder="搜索关键词..."
+                            placeholder="全量匹配或搜索..."
                             value={filters.adName}
                             onChange={(e) => setFilters(prev => ({ ...prev, adName: e.target.value }))}
                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:ring-4 focus:ring-indigo-100 outline-none pl-11 shadow-inner"
                           />
-                          <Tag size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
+                          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
                           <datalist id="ads-list">
-                            {dimensionSuggestions.ads.map(val => <option key={val} value={val} />)}
+                             {dimensionSuggestions.ads.map(val => <option key={val} value={val} />)}
                           </datalist>
                        </div>
                     </div>
                     <div className="space-y-2">
-                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">广告位/槽位</label>
+                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">广告位筛选</label>
                        <div className="relative">
                           <input 
                             list="slots-list"
@@ -779,8 +732,12 @@ export default function DailyBriefingPage() {
                        </div>
                     </div>
                   </div>
-               </div>
-             )}
+                ) : (
+                  <div className="py-12 border-2 border-dashed border-slate-100 rounded-3xl text-center">
+                    <p className="text-slate-400 font-bold italic">暂无关联投放数据，早报将侧重于日程安排</p>
+                  </div>
+                )}
+             </div>
           </div>
           
           <div className="lg:col-span-12 xl:col-span-4 h-full">
@@ -807,7 +764,7 @@ export default function DailyBriefingPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                      <div className="text-[9px] font-black text-indigo-300 uppercase">最大变降</div>
+                      <div className="text-[9px] font-black text-indigo-300 uppercase">最大降幅</div>
                       <div className="text-xs font-bold text-red-300">{briefing?.anomalies.sort((a,b) => a.changeRate - b.changeRate)[0]?.changeRate ? (briefing.anomalies.sort((a,b) => a.changeRate - b.changeRate)[0].changeRate * 100).toFixed(0) + '%' : '无'}</div>
                     </div>
                     <div className="bg-white/5 p-3 rounded-xl border border-white/5">
@@ -831,7 +788,7 @@ export default function DailyBriefingPage() {
 
         {/* Content Modules */}
         <div className="space-y-12">
-          
+
           {/* Module 1: Data Analysis */}
           <section>
             <div className="flex items-center gap-3 mb-6">
@@ -880,7 +837,7 @@ export default function DailyBriefingPage() {
 
                 {/* Anomalies and Recommendations */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                  <div className="lg:col-span-7 space-y-6">
+                  <div className="lg:col-span-12 space-y-6">
                     <div className="flex items-center justify-between">
                       <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
                         <AlertTriangle size={24} className="text-red-500" />
@@ -900,13 +857,22 @@ export default function DailyBriefingPage() {
                       )}
                     </div>
                   </div>
-
-                  <div className="lg:col-span-5 space-y-6">
-                     <ScheduleTimeline />
-                  </div>
                 </div>
               </div>
             )}
+          </section>
+          
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-green-600 p-2 rounded-lg text-white shadow-lg shadow-green-100"><Calendar size={20} /></div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">每日工作日程</h2>
+            </div>
+            <ScheduleTimeline 
+              schedules={schedules} 
+              onUpdate={handleUpdateSchedule} 
+              onDelete={handleDeleteSchedule} 
+              onAdd={handleAddSchedule} 
+            />
           </section>
 
           {/* Industry News Section */}
@@ -928,7 +894,7 @@ export default function DailyBriefingPage() {
                 {newsLoading ? (
                   <div className="flex flex-col items-center justify-center py-20 text-indigo-600 gap-4">
                     <RefreshCw className="animate-spin" size={32} />
-                    <span className="text-xs font-black uppercase tracking-widest">Loading Industry News...</span>
+                    <span className="text-xs font-black uppercase tracking-widest">Loading News...</span>
                   </div>
                 ) : news.length > 0 ? (
                   news.map(item => (
@@ -951,16 +917,6 @@ export default function DailyBriefingPage() {
                         <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium line-clamp-2">
                           {item.summary}
                         </p>
-                        <div className="p-5 bg-slate-50 rounded-2xl mb-6 border border-slate-100">
-                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><TrendingUp size={10} /> 投放策略影响</div>
-                          <div className="text-sm text-slate-700 font-bold leading-relaxed">{item.impact}</div>
-                        </div>
-                        {item.suggestion && (
-                          <div className="p-5 bg-blue-50/30 rounded-2xl mb-6 border border-blue-100/50">
-                            <div className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Info size={10} /> 智能优化建议</div>
-                            <div className="text-sm text-blue-900 font-bold leading-relaxed">{item.suggestion}</div>
-                          </div>
-                        )}
                         <div className="flex items-center justify-between pt-4 border-t border-slate-50">
                           <div className="flex items-center gap-2">
                              <span className="text-xs text-slate-400 font-black uppercase tracking-tight">{item.source}</span>
@@ -980,25 +936,18 @@ export default function DailyBriefingPage() {
               </div>
             </div>
 
-            {/* AI Update Section */}
             <div className="lg:pl-8 lg:border-l border-slate-100">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <div className="bg-purple-600 p-2 rounded-lg text-white shadow-lg shadow-purple-100"><BrainCircuit size={20} /></div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">AI 技术前哨站</h2>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">AI 技术前沿</h2>
                 </div>
-                <button 
-                  onClick={() => openUrl('https://www.theverge.com/ai')}
-                  className="text-xs font-black text-purple-600 uppercase tracking-widest hover:underline flex items-center gap-1"
-                >
-                  Updates <ArrowRight size={14} />
-                </button>
               </div>
               <div className="grid grid-cols-1 gap-6">
                 {aiLoading ? (
                   <div className="flex flex-col items-center justify-center py-20 text-purple-600 gap-4">
                     <RefreshCw className="animate-spin" size={32} />
-                    <span className="text-xs font-black uppercase tracking-widest">Scanning AI Frontier...</span>
+                    <span className="text-xs font-black uppercase tracking-widest">Scanning AI...</span>
                   </div>
                 ) : aiUpdates.length > 0 ? (
                   aiUpdates.map(update => (
@@ -1009,7 +958,7 @@ export default function DailyBriefingPage() {
                     >
                       <div className="p-8">
                         <div className="flex items-center gap-3 mb-4">
-                          <span className="bg-purple-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest shadow-sm shadow-purple-100">NEW RELEASE</span>
+                          <span className="bg-purple-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest shadow-sm shadow-purple-100">NEW</span>
                           <span className="text-xs text-slate-400 font-bold">{update.time}</span>
                         </div>
                         <h3 className="text-xl font-black text-slate-900 mb-3 tracking-tight">
@@ -1018,28 +967,9 @@ export default function DailyBriefingPage() {
                         <p className="text-sm text-slate-600 mb-6 font-medium leading-relaxed">
                           {update.summary}
                         </p>
-                        <div className="space-y-4 mb-6">
-                          <div className="bg-gradient-to-br from-purple-50 to-white p-5 rounded-2xl border border-purple-100 relative overflow-hidden">
-                             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                               <Sparkles size={64} className="text-purple-600" />
-                             </div>
-                            <div className="flex items-center gap-2 text-[10px] font-black text-purple-600 uppercase tracking-widest mb-2 relative z-10">
-                              <TrendingUp size={12} /> 落地应用场景
-                            </div>
-                            <div className="text-sm text-slate-800 leading-relaxed font-bold relative z-10">{update.useCase}</div>
-                          </div>
-                          {update.recommendation && (
-                            <div className="bg-indigo-50/30 p-5 rounded-2xl border border-indigo-100/50">
-                              <div className="flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-2">
-                                <Sparkles size={12} /> 建议操作
-                              </div>
-                              <div className="text-sm text-slate-800 leading-relaxed font-bold">{update.recommendation}</div>
-                            </div>
-                          )}
-                        </div>
                         <div className="flex items-center justify-between">
                           <div className="flex flex-wrap gap-2">
-                            {update.highlights.slice(0, 3).map(h => (
+                            {update.highlights.slice(0, 2).map(h => (
                                <span key={h} className="inline-block px-2 py-1 rounded-lg border border-slate-100 bg-slate-50 text-[10px] text-slate-400 font-black uppercase">{h}</span>
                             ))}
                           </div>
@@ -1061,11 +991,6 @@ export default function DailyBriefingPage() {
 
         {/* Footer */}
         <footer className="mt-32 pt-12 border-t border-slate-200 text-center">
-          <div className="flex justify-center gap-12 mb-8 opacity-20 grayscale filter group-hover:grayscale-0 transition-all duration-700">
-            <span className="text-2xl font-black tracking-tighter italic">MAX-ADS</span>
-            <span className="text-2xl font-black tracking-tighter italic">AI-INSIGHT</span>
-            <span className="text-2xl font-black tracking-tighter italic">DATA-OPS</span>
-          </div>
           <p className="text-slate-400 text-xs font-black uppercase tracking-[0.2em]">
             Precision Engineering for Digital Advertising · 2026
           </p>

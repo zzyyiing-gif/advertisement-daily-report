@@ -255,7 +255,13 @@ function generateRecommendations(anomalies: AdAnomaly[], metrics: AdMetric[]): s
 }
 
 function getOffsetDate(dateStr: string, offset: number): string {
+  if (!dateStr) return '';
   const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
   d.setDate(d.getDate() + offset);
-  return d.toISOString().split('T')[0];
+  try {
+    return d.toISOString().split('T')[0];
+  } catch (e) {
+    return '';
+  }
 }
