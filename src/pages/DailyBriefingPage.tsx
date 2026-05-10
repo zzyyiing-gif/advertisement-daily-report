@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'motion/react';
 import { 
   Upload, FileText, CheckCircle2, AlertCircle, Calendar, 
   RefreshCw, TrendingUp, TrendingDown, Minus, ChevronDown, 
@@ -123,8 +122,8 @@ const TrendChart: React.FC<{ metric: AdMetric }> = ({ metric }) => {
         </div>
       </div>
       
-      <div className="h-[300px] w-full" style={{ minHeight: '300px', minWidth: '0', position: 'relative' }}>
-        <ResponsiveContainer width="100%" height={300}>
+      <div key={metric.label} className="h-[300px] w-full" style={{ minHeight: '300px', minWidth: '0', position: 'relative', overflow: 'hidden' }}>
+        <ResponsiveContainer id={`chart-container-${metric.label}`} width="100%" height={300} debounce={50}>
           <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -835,12 +834,14 @@ export default function DailyBriefingPage() {
                 </div>
 
                 {/* Trend Chart Area */}
-                <div className="min-h-[380px]">
+                <div className="min-h-[380px] w-full overflow-hidden">
                   {(() => {
                     if (!briefing?.metrics) return null;
                     const selectedMetric = briefing.metrics.find(m => m.label === selectedMetricLabel);
                     return selectedMetric ? (
-                      <TrendChart metric={selectedMetric} />
+                      <div>
+                        <TrendChart metric={selectedMetric} />
+                      </div>
                     ) : null;
                   })()}
                 </div>
