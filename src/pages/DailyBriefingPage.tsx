@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { 
   Upload, FileText, CheckCircle2, AlertCircle, Calendar, 
   RefreshCw, TrendingUp, TrendingDown, Minus, ChevronDown, 
@@ -123,7 +123,7 @@ const TrendChart: React.FC<{ metric: AdMetric }> = ({ metric }) => {
         </div>
       </div>
       
-      <div className="h-[300px] w-full" style={{ minHeight: '300px', position: 'relative' }}>
+      <div className="h-[300px] w-full" style={{ minHeight: '300px', minWidth: '0', position: 'relative' }}>
         <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
@@ -206,42 +206,34 @@ const AnomalyItem: React.FC<{ anomaly: AdAnomaly }> = ({ anomaly }) => {
           </button>
         </div>
 
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                <div className="space-y-4">
-                  <div className="bg-white/60 rounded-xl p-4 border border-slate-100 shadow-sm">
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                      <Sparkles size={10} /> 异常归因分析
-                    </div>
-                    <div className="text-sm text-slate-700 leading-relaxed font-medium">{anomaly.reason}</div>
-                  </div>
-                  <div className="bg-white/60 rounded-xl p-4 border border-slate-100 shadow-sm">
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                      <ListChecks size={10} /> 建议排查路径
-                    </div>
-                    <div className="text-sm text-slate-700 leading-relaxed font-medium">{anomaly.troubleshoot}</div>
-                  </div>
+        {isOpen && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            <div className="space-y-4">
+              <div className="bg-white/60 rounded-xl p-4 border border-slate-100 shadow-sm">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <Sparkles size={10} /> 异常归因分析
                 </div>
-                
-                <div className="bg-indigo-600 rounded-xl p-5 shadow-lg shadow-indigo-100 text-white flex flex-col justify-center">
-                  <div className="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-2">行动建议 / Action Requirement</div>
-                  <div className="text-base font-bold leading-relaxed mb-3">
-                    {anomaly.nextStep}
-                  </div>
-                  <button className="self-start text-[10px] font-black bg-white/20 hover:bg-white/30 text-white rounded px-3 py-1.5 transition-all flex items-center gap-1">
-                    标记已处理 <CheckCircle2 size={10} />
-                  </button>
-                </div>
+                <div className="text-sm text-slate-700 leading-relaxed font-medium">{anomaly.reason}</div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <div className="bg-white/60 rounded-xl p-4 border border-slate-100 shadow-sm">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <ListChecks size={10} /> 建议排查路径
+                </div>
+                <div className="text-sm text-slate-700 leading-relaxed font-medium">{anomaly.troubleshoot}</div>
+              </div>
+            </div>
+            
+            <div className="bg-indigo-600 rounded-xl p-5 shadow-lg shadow-indigo-100 text-white flex flex-col justify-center">
+              <div className="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-2">行动建议 / Action Requirement</div>
+              <div className="text-base font-bold leading-relaxed mb-3">
+                {anomaly.nextStep}
+              </div>
+              <button className="self-start text-[10px] font-black bg-white/20 hover:bg-white/30 text-white rounded px-3 py-1.5 transition-all flex items-center gap-1">
+                标记已处理 <CheckCircle2 size={10} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -606,26 +598,19 @@ export default function DailyBriefingPage() {
       <div className="max-w-7xl mx-auto px-4 py-8 lg:px-8">
         
         {/* Error Message Area */}
-        <AnimatePresence>
-          {errorMessage && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="mb-6 overflow-hidden"
-            >
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-2 font-medium">
-                  <AlertTriangle size={18} />
-                  {errorMessage}
-                </div>
-                <button onClick={() => setErrorMessage(null)} className="text-red-400 hover:text-red-600">
-                  <RefreshCw size={14} />
-                </button>
+        {errorMessage && (
+          <div className="mb-6 overflow-hidden">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-2 font-medium">
+                <AlertTriangle size={18} />
+                {errorMessage}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <button onClick={() => setErrorMessage(null)} className="text-red-400 hover:text-red-600">
+                <RefreshCw size={14} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Header */}
         <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -852,16 +837,10 @@ export default function DailyBriefingPage() {
                 {/* Trend Chart Area */}
                 <div className="min-h-[380px]">
                   {(() => {
+                    if (!briefing?.metrics) return null;
                     const selectedMetric = briefing.metrics.find(m => m.label === selectedMetricLabel);
                     return selectedMetric ? (
-                      <motion.div
-                        key={selectedMetricLabel}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <TrendChart metric={selectedMetric} />
-                      </motion.div>
+                      <TrendChart metric={selectedMetric} />
                     ) : null;
                   })()}
                 </div>
