@@ -456,6 +456,8 @@ export default function DailyBriefingPage() {
   
   const [news, setNews] = useState<IndustryNews[]>([]);
   const [aiUpdates, setAiUpdates] = useState<AiUpdate[]>([]);
+  const [newsLoading, setNewsLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<{ name: string; size: number; status: 'idle' | 'success' | 'error' | 'parsing' }>({ name: '', size: 0, status: 'idle' });
@@ -474,10 +476,14 @@ export default function DailyBriefingPage() {
   }, [csvData, targetDate, filters]);
 
   const fetchNews = async () => {
+    setNewsLoading(true);
     try {
+      console.log('Fetching industry news from /api/news...');
       const res = await fetch('/api/news');
+      console.log('News Response status:', res.status);
       if (!res.ok) throw new Error(`API 响应错误: ${res.status}`);
       const data = await res.json();
+      console.log('News Data received:', data);
       if (Array.isArray(data)) {
         setNews(data);
       } else {
@@ -485,15 +491,20 @@ export default function DailyBriefingPage() {
       }
     } catch (e) { 
       console.error('Fetch news error', e);
-      // Don't set global error message to avoid blocking the whole UI if only news fails
+    } finally {
+      setNewsLoading(false);
     }
   };
 
   const fetchAiUpdates = async () => {
+    setAiLoading(true);
     try {
+      console.log('Fetching AI updates from /api/ai-updates...');
       const res = await fetch('/api/ai-updates');
+      console.log('AI Updates Response status:', res.status);
       if (!res.ok) throw new Error(`API 响应错误: ${res.status}`);
       const data = await res.json();
+      console.log('AI Data received:', data);
       if (Array.isArray(data)) {
         setAiUpdates(data);
       } else {
@@ -501,6 +512,8 @@ export default function DailyBriefingPage() {
       }
     } catch (e) { 
       console.error('Fetch AI error', e);
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -912,7 +925,12 @@ export default function DailyBriefingPage() {
                 </button>
               </div>
               <div className="grid grid-cols-1 gap-6">
-                {news.length > 0 ? (
+                {newsLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-indigo-600 gap-4">
+                    <RefreshCw className="animate-spin" size={32} />
+                    <span className="text-xs font-black uppercase tracking-widest">Loading Industry News...</span>
+                  </div>
+                ) : news.length > 0 ? (
                   news.map(item => (
                     <div 
                       key={item.id} 
@@ -977,7 +995,12 @@ export default function DailyBriefingPage() {
                 </button>
               </div>
               <div className="grid grid-cols-1 gap-6">
-                {aiUpdates.length > 0 ? (
+                {aiLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-purple-600 gap-4">
+                    <RefreshCw className="animate-spin" size={32} />
+                    <span className="text-xs font-black uppercase tracking-widest">Scanning AI Frontier...</span>
+                  </div>
+                ) : aiUpdates.length > 0 ? (
                   aiUpdates.map(update => (
                     <div 
                       key={update.id} 
