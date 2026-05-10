@@ -106,6 +106,22 @@ export function parseCsv(text: string): RawAdDataRow[] {
 }
 
 export function normalizeData(rawData: RawAdDataRow[]): NormalizedAdDataRow[] {
+  if (rawData.length === 0) return [];
+  
+  // Check for minimum required headers
+  const firstRow = rawData[0];
+  const keys = Object.keys(firstRow).map(k => k.toLowerCase());
+  
+  const hasDateHeader = keys.some(k => FIELD_MAP[k] === 'date');
+  if (!hasDateHeader) {
+    throw new Error('CSV 文件缺少必需的 "日期" 列。请检查文件是否包含：日期、date 或 day 列。');
+  }
+
+  const hasMetricHeader = keys.some(k => ['spend', 'impressions', 'clicks'].includes(FIELD_MAP[k] as string));
+  if (!hasMetricHeader) {
+    throw new Error('CSV 文件缺少必需的指标列。请检查文件是否包含：消耗、展示、点击等核心数据。');
+  }
+
   return rawData.map((row, index) => {
     const normalized: any = {
       spend: 0,

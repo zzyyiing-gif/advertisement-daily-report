@@ -15,6 +15,8 @@ import {
   AdAnomaly, IndustryNews, AiUpdate 
 } from '../types/briefing';
 
+import ErrorBoundary from '../components/ErrorBoundary';
+
 // --- Sub-components ---
 
 interface MetricCardProps {
@@ -100,14 +102,14 @@ const TrendChart: React.FC<{ metric: AdMetric }> = ({ metric }) => {
   
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-[32px] border border-slate-200 p-8 shadow-sm flex items-center justify-center h-[380px]">
+      <div className="flex items-center justify-center h-[380px]">
         <div className="text-slate-300 font-black uppercase text-sm tracking-widest">趋势数据不足</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-[32px] border border-slate-200 p-8 shadow-sm">
+    <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
@@ -122,7 +124,7 @@ const TrendChart: React.FC<{ metric: AdMetric }> = ({ metric }) => {
         </div>
       </div>
       
-      <div key={metric.label} className="h-[300px] w-full" style={{ minHeight: '300px', minWidth: '0', position: 'relative', overflow: 'hidden' }}>
+      <div className="h-[300px] w-full" style={{ minHeight: '300px', minWidth: '0', position: 'relative', overflow: 'hidden' }}>
         <ResponsiveContainer id={`chart-container-${metric.label}`} width="100%" height={300} debounce={50}>
           <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
@@ -834,16 +836,35 @@ export default function DailyBriefingPage() {
                 </div>
 
                 {/* Trend Chart Area */}
-                <div className="min-h-[380px] w-full overflow-hidden">
-                  {(() => {
-                    if (!briefing?.metrics) return null;
-                    const selectedMetric = briefing.metrics.find(m => m.label === selectedMetricLabel);
-                    return selectedMetric ? (
-                      <div>
-                        <TrendChart metric={selectedMetric} />
-                      </div>
-                    ) : null;
-                  })()}
+                <div className="min-h-[380px] w-full overflow-hidden bg-white rounded-[32px] border border-slate-200 shadow-sm">
+                  <ErrorBoundary fallback={
+                    <div className="h-[380px] flex flex-col items-center justify-center p-8 text-center bg-amber-50">
+                      <AlertTriangle className="text-amber-500 mb-4" size={48} />
+                      <h3 className="font-black text-amber-800 text-lg">图表模块初始化异常</h3>
+                      <p className="text-amber-600 text-sm mt-2 max-w-xs">这通常是由于 CSV 数据中的特殊字符或数据结构不匹配导致的，已为您隔离错误以保证其他功能可用。</p>
+                    </div>
+                  }>
+                    {(() => {
+                      if (!briefing || !briefing.metrics) return (
+                        <div className="h-[380px] flex items-center justify-center text-slate-300 font-black uppercase text-sm tracking-widest">
+                          等待数据加载...
+                        </div>
+                      );
+                      
+                      const selectedMetric = briefing.metrics.find(m => m.label === selectedMetricLabel);
+                      if (!selectedMetric) return (
+                        <div className="h-[380px] flex items-center justify-center text-slate-300 font-black uppercase text-sm tracking-widest">
+                          未选择指标
+                        </div>
+                      );
+
+                      return (
+                        <div key={`chart-wrapper-${selectedMetricLabel}`}>
+                          <TrendChart metric={selectedMetric} />
+                        </div>
+                      );
+                    })()}
+                  </ErrorBoundary>
                 </div>
 
                 {/* Anomalies and Recommendations */}
