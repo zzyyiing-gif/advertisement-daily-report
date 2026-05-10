@@ -28,8 +28,8 @@ const MetricCard: React.FC<MetricCardProps> = ({ metric, isActive, onClick }) =>
   const isPositive = metric.trend === 'up';
   const isNegative = metric.trend === 'down';
 
-  const formatValue = (v: number | undefined) => {
-    if (v === undefined) return '-';
+  const formatValue = (v: number | undefined | null) => {
+    if (v === undefined || v === null || isNaN(v)) return '-';
     if (metric.isPercentage) return (v * 100).toFixed(2) + '%';
     if (metric.isCurrency) return '¥' + v.toLocaleString(undefined, { minimumFractionDigits: metric.precision, maximumFractionDigits: metric.precision });
     return v.toLocaleString(undefined, { maximumFractionDigits: metric.precision });
@@ -64,18 +64,18 @@ const MetricCard: React.FC<MetricCardProps> = ({ metric, isActive, onClick }) =>
       <div className="flex flex-wrap gap-x-3 gap-y-1">
         <div className="flex items-center text-[10px]">
           <span className="text-gray-400 mr-1">环比</span>
-          {metric.change !== undefined ? (
+          {typeof metric.change === 'number' && !isNaN(metric.change) ? (
             <div className={`flex items-center font-bold ${isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : 'text-gray-500'}`}>
               {isPositive ? <TrendingUp size={10} className="mr-0.5" /> : isNegative ? <TrendingDown size={10} className="mr-0.5" /> : <Minus size={10} className="mr-0.5" />}
-              {Math.abs(metric.change * 100).toFixed(1)}%
+              {(Math.abs(metric.change) * 100).toFixed(1)}%
             </div>
           ) : <span className="text-gray-300">-</span>}
         </div>
         <div className="flex items-center text-[10px]">
           <span className="text-gray-400 mr-1 font-medium">近7日</span>
-          {metric.avgChange !== undefined ? (
+          {typeof metric.avgChange === 'number' && !isNaN(metric.avgChange) ? (
             <div className={`flex items-center font-bold ${metric.avgChange > 0 ? 'text-green-600' : metric.avgChange < 0 ? 'text-red-600' : 'text-gray-500'}`}>
-              {Math.abs(metric.avgChange * 100).toFixed(1)}%
+              {(Math.abs(metric.avgChange) * 100).toFixed(1)}%
             </div>
           ) : <span className="text-gray-300">-</span>}
         </div>

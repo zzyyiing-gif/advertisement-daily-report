@@ -11,13 +11,13 @@ export function calculateDailySummary(data: NormalizedAdDataRow[], targetDate: s
   let filteredData = data;
   if (filters) {
     if (filters.adName) {
-      filteredData = filteredData.filter(d => d.ad?.toLowerCase().includes(filters.adName!.toLowerCase()));
+      filteredData = filteredData.filter(d => (d.ad || '').toLowerCase().includes(filters.adName!.toLowerCase()));
     }
     if (filters.adSlot) {
-      filteredData = filteredData.filter(d => d.adSlot?.toLowerCase().includes(filters.adSlot!.toLowerCase()));
+      filteredData = filteredData.filter(d => (d.adSlot || '').toLowerCase().includes(filters.adSlot!.toLowerCase()));
     }
     if (filters.advertiser) {
-      filteredData = filteredData.filter(d => d.advertiser?.toLowerCase().includes(filters.advertiser!.toLowerCase()));
+      filteredData = filteredData.filter(d => (d.advertiser || '').toLowerCase().includes(filters.advertiser!.toLowerCase()));
     }
   }
 
@@ -57,18 +57,26 @@ export function calculateDailySummary(data: NormalizedAdDataRow[], targetDate: s
   ];
 
   // Add trend data to each metric
-  metrics.forEach(m => {
-    m.trendData = trendDates.map(date => {
-      const dayRows = filteredData.filter(d => d.date === date);
-      const dayTotals = sumMetrics(dayRows);
-      let val = 0;
-      if (m.label === '点击率') val = dayTotals.impressions ? (dayTotals.clicks / dayTotals.impressions) : 0;
-      else if (m.label === '转化率') val = dayTotals.clicks ? (dayTotals.conversions / dayTotals.clicks) : 0;
-      else val = (dayTotals as any)[m.key];
-      
-      return { date: date.split('-').slice(1).join('/'), value: val };
+    metrics.forEach(m => {
+      m.trendData = trendDates.map(date => {
+        const dayRows = filteredData.filter(d => d.date === date);
+        const dayTotals = sumMetrics(dayRows);
+        let val: number = 0;
+        if (m.label === '点击率') {
+          val = dayTotals.impressions ? (dayTotals.clicks / dayTotals.impressions) : 0;
+        } else if (m.label === '转化率') {
+          val = dayTotals.clicks ? (dayTotals.conversions / dayTotals.clicks) : 0;
+        } else {
+          const rawVal = (dayTotals as any)[m.key];
+          val = typeof rawVal === 'number' && !isNaN(rawVal) ? rawVal : 0;
+        }
+        
+        // Final safety check for NaN
+        if (isNaN(val)) val = 0;
+        
+        return { date: date.split('-').slice(1).join('/'), value: val };
+      });
     });
-  });
 
   const anomalies = detectAnomalies(metrics, totals, prevTotals, filteredData, targetDate);
   const recommendations = generateRecommendations(anomalies, metrics);
@@ -142,7 +150,7 @@ function createMetric(label: string, key: any, val: number, prev: number, avg: n
 
 function formatVal(m: AdMetric, prev = false) {
   const v = prev ? m.prevValue : m.value;
-  if (v === undefined) return '-';
+  if (v === undefined || v === null || isNaN(v)) return '-';
   if (m.isPercentage) return (v * 100).toFixed(2) + '%';
   if (m.isCurrency) return '¥' + v.toLocaleString(undefined, { minimumFractionDigits: m.precision, maximumFractionDigits: m.precision });
   return v.toLocaleString(undefined, { maximumFractionDigits: m.precision });
