@@ -476,17 +476,32 @@ export default function DailyBriefingPage() {
   const fetchNews = async () => {
     try {
       const res = await fetch('/api/news');
+      if (!res.ok) throw new Error(`API 响应错误: ${res.status}`);
       const data = await res.json();
-      setNews(data);
-    } catch (e) { console.error('Fetch news error', e); }
+      if (Array.isArray(data)) {
+        setNews(data);
+      } else {
+        console.error('资讯数据格式不正确', data);
+      }
+    } catch (e) { 
+      console.error('Fetch news error', e);
+      // Don't set global error message to avoid blocking the whole UI if only news fails
+    }
   };
 
   const fetchAiUpdates = async () => {
     try {
       const res = await fetch('/api/ai-updates');
+      if (!res.ok) throw new Error(`API 响应错误: ${res.status}`);
       const data = await res.json();
-      setAiUpdates(data);
-    } catch (e) { console.error('Fetch AI error', e); }
+      if (Array.isArray(data)) {
+        setAiUpdates(data);
+      } else {
+        console.error('AI 动态数据格式不正确', data);
+      }
+    } catch (e) { 
+      console.error('Fetch AI error', e);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

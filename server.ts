@@ -1,14 +1,25 @@
 import express from "express";
 import path from "path";
+import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-  // Mock API for Industry News
-  app.get("/api/news", (req, res) => {
-    res.json([
+const app = express();
+const PORT = 3000;
+
+// Export app for Vercel/Serverless
+export { app };
+
+// Health check
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", mode: process.env.NODE_ENV });
+});
+
+// Mock API for Industry News
+app.get("/api/news", (req, res) => {
+  res.json([
       {
         id: 'n1',
         title: 'Google Ads 推出 PMax "Power Up" 工具：AI 自动生成高保真素材',
@@ -91,7 +102,7 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), "dist");
+    const distPath = path.join(__dirname, "dist");
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
@@ -101,6 +112,5 @@ async function startServer() {
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running at http://localhost:${PORT}`);
   });
-}
 
-startServer();
+export default app;
