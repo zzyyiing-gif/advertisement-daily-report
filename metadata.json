@@ -1,0 +1,6 @@
+{
+  "name": "每日工作早报",
+  "description": "面向广告运营人员的日报分析工具，支持 CSV 数据上传、异常识别及行业 AI 动态概览。",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
