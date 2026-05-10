@@ -96,7 +96,16 @@ const MetricCard: React.FC<MetricCardProps> = ({ metric, isActive, onClick }) =>
 
 const TrendChart: React.FC<{ metric: AdMetric }> = ({ metric }) => {
   const isPositive = metric.trend === 'up';
+  const data = metric.trendData || [];
   
+  if (data.length === 0) {
+    return (
+      <div className="bg-white rounded-[32px] border border-slate-200 p-8 shadow-sm flex items-center justify-center h-[380px]">
+        <div className="text-slate-300 font-black uppercase text-sm tracking-widest">趋势数据不足</div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-[32px] border border-slate-200 p-8 shadow-sm">
       <div className="flex items-center justify-between mb-8">
@@ -115,7 +124,7 @@ const TrendChart: React.FC<{ metric: AdMetric }> = ({ metric }) => {
       
       <div className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={metric.trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={isPositive ? "#10b981" : "#6366f1"} stopOpacity={0.1}/>
@@ -765,11 +774,23 @@ export default function DailyBriefingPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-white/5 p-3 rounded-xl border border-white/5">
                       <div className="text-[9px] font-black text-indigo-300 uppercase">最大降幅</div>
-                      <div className="text-xs font-bold text-red-300">{briefing?.anomalies.sort((a,b) => a.changeRate - b.changeRate)[0]?.changeRate ? (briefing.anomalies.sort((a,b) => a.changeRate - b.changeRate)[0].changeRate * 100).toFixed(0) + '%' : '无'}</div>
+                      <div className="text-xs font-bold text-red-300">
+                        {(() => {
+                           const sorted = [...(briefing?.anomalies || [])].sort((a,b) => a.changeRate - b.changeRate);
+                           const val = sorted[0]?.changeRate;
+                           return val !== undefined ? (val * 100).toFixed(0) + '%' : '无';
+                        })()}
+                      </div>
                     </div>
                     <div className="bg-white/5 p-3 rounded-xl border border-white/5">
                       <div className="text-[9px] font-black text-indigo-300 uppercase">最大增幅</div>
-                      <div className="text-xs font-bold text-green-300">{briefing?.anomalies.sort((a,b) => b.changeRate - a.changeRate)[0]?.changeRate ? (briefing.anomalies.sort((a,b) => b.changeRate - a.changeRate)[0].changeRate * 100).toFixed(0) + '%' : '无'}</div>
+                      <div className="text-xs font-bold text-green-300">
+                        {(() => {
+                           const sorted = [...(briefing?.anomalies || [])].sort((a,b) => b.changeRate - a.changeRate);
+                           const val = sorted[0]?.changeRate;
+                           return val !== undefined ? (val * 100).toFixed(0) + '%' : '无';
+                        })()}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -810,7 +831,7 @@ export default function DailyBriefingPage() {
               <div className="space-y-8">
                 {/* Metrics Loop */}
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-                  {briefing.metrics.map(m => (
+                  {(briefing.metrics || []).map(m => (
                     <MetricCard 
                       key={m.label} 
                       metric={m} 
@@ -829,9 +850,10 @@ export default function DailyBriefingPage() {
                     exit={{ opacity: 0, scale: 0.98 }}
                     transition={{ duration: 0.4 }}
                   >
-                    {briefing.metrics.find(m => m.label === selectedMetricLabel) && (
-                      <TrendChart metric={briefing.metrics.find(m => m.label === selectedMetricLabel)!} />
-                    )}
+                    {(() => {
+                      const selectedMetric = briefing.metrics.find(m => m.label === selectedMetricLabel);
+                      return selectedMetric ? <TrendChart metric={selectedMetric} /> : null;
+                    })()}
                   </motion.div>
                 </AnimatePresence>
 
