@@ -97,6 +97,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ metric, isActive, onClick }) =>
 const TrendChart: React.FC<{ metric: AdMetric }> = ({ metric }) => {
   const isPositive = metric.trend === 'up';
   const data = metric.trendData || [];
+  const gradientId = `colorValue-${metric.label.replace(/\s+/g, '-')}`;
   
   if (data.length === 0) {
     return (
@@ -122,11 +123,11 @@ const TrendChart: React.FC<{ metric: AdMetric }> = ({ metric }) => {
         </div>
       </div>
       
-      <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="h-[300px] w-full" style={{ minHeight: '300px', position: 'relative' }}>
+        <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
-              <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={isPositive ? "#10b981" : "#6366f1"} stopOpacity={0.1}/>
                 <stop offset="95%" stopColor={isPositive ? "#10b981" : "#6366f1"} stopOpacity={0}/>
               </linearGradient>
@@ -153,8 +154,8 @@ const TrendChart: React.FC<{ metric: AdMetric }> = ({ metric }) => {
               stroke={isPositive ? "#10b981" : "#6366f1"} 
               strokeWidth={4}
               fillOpacity={1} 
-              fill="url(#colorValue)" 
-              animationDuration={2000}
+              fill={`url(#${gradientId})`} 
+              animationDuration={1500}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -552,6 +553,8 @@ export default function DailyBriefingPage() {
         if (normalized.length === 0) throw new Error('未识别到有效的广告数据行');
 
         const dates = Array.from(new Set(normalized.map(d => d.date))).sort((a,b) => b.localeCompare(a));
+        
+        // Single atomic-like update sequence
         setCsvData(normalized);
         setAvailableDates(dates);
         setTargetDate(dates[0]);
@@ -564,6 +567,11 @@ export default function DailyBriefingPage() {
 
         const summary = calculateDailySummary(normalized, dates[0], filters);
         setBriefing(summary);
+        
+        if (summary.metrics && summary.metrics.length > 0) {
+          setSelectedMetricLabel(summary.metrics[0].label);
+        }
+        
         setUploadStatus(prev => ({ ...prev, status: 'success' }));
       } catch (err: any) {
         setErrorMessage(err.message || '文件解析失败');
@@ -842,20 +850,21 @@ export default function DailyBriefingPage() {
                 </div>
 
                 {/* Trend Chart Area */}
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={selectedMetricLabel}
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.98 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    {(() => {
-                      const selectedMetric = briefing.metrics.find(m => m.label === selectedMetricLabel);
-                      return selectedMetric ? <TrendChart metric={selectedMetric} /> : null;
-                    })()}
-                  </motion.div>
-                </AnimatePresence>
+                <div className="min-h-[380px]">
+                  {(() => {
+                    const selectedMetric = briefing.metrics.find(m => m.label === selectedMetricLabel);
+                    return selectedMetric ? (
+                      <motion.div
+                        key={selectedMetricLabel}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <TrendChart metric={selectedMetric} />
+                      </motion.div>
+                    ) : null;
+                  })()}
+                </div>
 
                 {/* Anomalies and Recommendations */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
